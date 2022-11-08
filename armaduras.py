@@ -72,4 +72,4 @@ yf = 3
 vectorC = [5, 6, 1, 2]
 
 e1 = ARMADURAS("Elem 1", A, E, xi, yi, xf, yf, vectorC)
-print(e1)
+# print(e1)
