@@ -63,13 +63,13 @@ class ARMADURAS():
         return np.matmul(TransT_RigLoc, self.T)
 
 
-A = 1
-E = 1
-xi = 0
-yi = 0
-xf = 4
-yf = 3 
-vectorC = [5, 6, 1, 2]
+# A = 1
+# E = 1
+# xi = 0
+# yi = 0
+# xf = 4
+# yf = 3 
+# vectorC = [5, 6, 1, 2]
 
-e1 = ARMADURAS("Elem 1", A, E, xi, yi, xf, yf, vectorC)
+# e1 = ARMADURAS("Elem 1", A, E, xi, yi, xf, yf, vectorC)
 # print(e1)
