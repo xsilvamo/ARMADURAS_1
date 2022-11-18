@@ -23,8 +23,8 @@ tensionCompresion() Indica si la barra esta en tension o compresion
 
 class ARMADURAS():
     #definimos variables
-    def __init__(self, elemento, area, moduloE, coor_xi, coor_yi, coor_xf, coor_yf, vectorCoordenadas):
-        self.elem = elemento
+    def __init__(self, barra, area, moduloE, coor_xi, coor_yi, coor_xf, coor_yf, vectorCoordenadas):
+        self.bar = barra
         self.A = area
         self.E = moduloE
         self.xi = coor_xi
@@ -43,7 +43,7 @@ class ARMADURAS():
 
     #definimos el metodo str para devolver una cadena de caracteres
     def __str__(self):
-        print("Elemento: ", self.elem)
+        print("Barra: ", self.bar)
         print("Area: ", self.A)
         print("Modulo de elasticidad: ", self.E)
         print("Coordenadas iniciales: ({}, {})".format(self.xi, self.yi))
@@ -82,14 +82,14 @@ class ARMADURAS():
 #creamos la clase de analisis de la matriz
 class AnalisisMatricial():
     #definimos variables
-    def __init__(self, tabla_elem, tabla_nodos, tabla_fuerzas, tabla_desplazamientos):
-        self.tE = tabla_elem
+    def __init__(self, tabla_barras, tabla_nodos, tabla_fuerzas, tabla_desplazamientos):
+        self.tB = tabla_barras
         self.tN = tabla_nodos
         self.tF = tabla_fuerzas
         self.tD = tabla_desplazamientos
 
-        #contamos el numero de elementos
-        self.num_elem = len(self.tE)
+        #contamos el numero de barras
+        self.num_barra = len(self.tB)
         #contamos el numero de nodos
         self.num_nodos = len(self.tN)
         #contamos el numero de grados de libertad
@@ -103,18 +103,38 @@ class AnalisisMatricial():
 
         self.Kg = self.matrizRigidezGlobal()
 
+        [self.k11 , self.k12, self.k21, self.k22] = self.matrizRigidezGlobalParcial()
+
+        self.FgC = self.vectorFuerzasGlobalesConocidas()
+
+        self.DgC = self.vectorDesplazamientosGlobalesConocidos()
+
+        [self.DesplazamientosDesconocidos, self.FuerzasDesconocidas, self.FuerzasGlobales, self.DesplazamientosGlobales] = self.reaccionesDesplazamientos()
+
+        self.tc = self.tensionCompresion()
+
     #definimos el metodo str para devolver una cadena de caracteres
     def __str__(self):
-        print("Numero de elementos: ", self.num_elem)
+        print("Numero de Barras: ", self.num_barra)
         print("Numero de nodos: ", self.num_nodos)
         print("Numero de grados de libertad: ", self.num_grados)
         print("Numero de reacciones: ", self.num_reacciones)
         print("Numero de fuerzas conocidas: ", self.num_fuerzasConocidas)
         print("Diccionario de nodos: ", self.N)
-        print("Matriz de permutacion: ", self.PI)
-        print("Elemento 3: ", self.armad[2])
-        print("Matriz de rigidez global: ", self.Kg)
-        
+        print("Matriz de permutacion: \n", self.PI)
+        print("Barra 3: ", self.armad[2])
+        print("Matriz de rigidez global: \n", self.Kg)
+        print("\nMatriz de rigidez k11: \n", self.k11)
+        print("\nMatriz de rigidez k12: \n", self.k12)
+        print("\nMatriz de rigidez k21: \n", self.k21)
+        print("\nMatriz de rigidez k22: \n", self.k22)
+        print("\nVector de fuerzas conocidas: \n", self.FgC)
+        print("\nVector de desplazamientos conocidos: \n", self.DgC)
+        print("\nVector de fuerzas desconocidas: \n", self.FuerzasDesconocidas)
+        print("\nVector de desplazamientos desconocidos: \n", self.DesplazamientosDesconocidos)
+        print("\nVector de fuerzas globales: \n", self.FuerzasGlobales)
+        print("\nVector de desplazamientos globales: \n", self.DesplazamientosGlobales)
+        print("\nTensiones y compresiones: \n", self.tc)
         return ""
 
     #definimos el metodo para calcular el vector de coordenadas globales
@@ -151,11 +171,15 @@ class AnalisisMatricial():
 
             elif tipo == "DX":
                 reacciones += 1
-                dicNodos.setdefault(key_Nodos, [coorx, coory])
+                dicNodos.setdefault(key_Nodos, [coorx, coory, constante, gradosLibertad])
+                constante += 1
+                gradosLibertad -= 1
 
             elif tipo == "DY":
                 reacciones += 1
-                dicNodos.setdefault(key_Nodos, [coorx, coory])
+                dicNodos.setdefault(key_Nodos, [coorx, coory, gradosLibertad, constante])
+                constante += 1
+                gradosLibertad -= 1
 
         #numero de fuerzas conocidas como la diferencia de numero grados libertad menos reacciones
         numFuerzasConocidas = self.num_grados - reacciones
@@ -164,24 +188,24 @@ class AnalisisMatricial():
     def matrizPi(self):
         #creamos una lista vacia
         listaPi = []
-        for i in range(self.num_elem):
-            ninicial = self.tE[i][3]
-            nfinal = self.tE[i][4]
+        for i in range(self.num_barra):
+            ninicial = self.tB[i][3]
+            nfinal = self.tB[i][4]
             listaPi.append([self.N[ninicial][2], self.N[ninicial][3], self.N[nfinal][2], self.N[nfinal][3]])
         return listaPi
 
     def Armaduras(self):
         #lista vacia
         element = []
-        for i in range(self.num_elem):
-            el = self.tE[i][0]
+        for i in range(self.num_barra):
+            el = self.tB[i][0]
             #area
-            a = self.tE[i][1]
-            modE = self.tE[i][2]
+            a = self.tB[i][1]
+            modE = self.tB[i][2]
             #nodo inicial
-            NI = self.tE[i][3]
+            NI = self.tB[i][3]
             #nodo final
-            NF = self.tE[i][4]
+            NF = self.tB[i][4]
             xi = self.N[NI][0]
             yi = self.N[NI][1]
             xf = self.N[NF][0]
@@ -199,7 +223,7 @@ class AnalisisMatricial():
         #matriz rigidez global vacia (k)
         k = np.zeros((self.num_grados, self.num_grados))
 
-        for e in range(self.num_elem):
+        for e in range(self.num_barra):
             #matriz de rigidez local
             rigGlobal = self.armad[e].rigGlob
             for i in range(4):
@@ -209,8 +233,67 @@ class AnalisisMatricial():
                     k[a][b] = rigGlobal[i,j] + k[a,b]
         return k
 
+    def matrizRigidezGlobalParcial(self):
+        k11 = self.Kg[0:self.num_fuerzasConocidas, 0:self.num_fuerzasConocidas]
+        k12 = self.Kg[0:self.num_fuerzasConocidas, self.num_fuerzasConocidas:self.num_grados]
+        k21 = self.Kg[self.num_fuerzasConocidas:self.num_grados, 0:self.num_fuerzasConocidas]
+        k22 = self.Kg[self.num_fuerzasConocidas:self.num_grados, self.num_fuerzasConocidas:self.num_grados]
+        return k11, k12, k21, k22
+    
+    def vectorFuerzasGlobalesConocidas(self):
+        FuerzasConocidas = np.zeros((self.num_fuerzasConocidas, 1))
+        for i in range(len(self.tF)):
+            nodo = self.tF[i][1]
+            direccion = self.tF[i][2]
+            if direccion == 'DX':
+                j = self.N[nodo][2]-1
+            elif direccion == 'DY':
+                j = self.N[nodo][3]-1
+            FuerzasConocidas[j] = self.tF[i][0]
+        return FuerzasConocidas
+
+
+    def vectorDesplazamientosGlobalesConocidos(self):
+        DesplazamientosConocidos = np.zeros((self.num_grados - self.num_fuerzasConocidas, 1)) #vector de desplazamientos conocidos
+        for i in range(len(self.tD)): #recorremos la tabla de desplazamientos
+            nodo = self.tD[i][1]
+            direccion = self.tD[i][2]
+            if direccion == 'DX':
+                j = self.N[nodo][2]-1
+            elif direccion == 'DY':
+                j = self.N[nodo][3]-1
+            DesplazamientosConocidos[j-self.num_fuerzasConocidas] = self.tD[i][0]
+        return DesplazamientosConocidos
+    
+    def reaccionesDesplazamientos(self):
+        k11_inv = np.linalg.inv(self.k11)
+        DesplazamientosDesconocidos =  np.matmul(k11_inv , (self.FgC - np.matmul(self.k12, self.DgC)))
+        FuerzasDesconocidas = np.matmul(self.k21, DesplazamientosDesconocidos) + np.matmul(self.k22, self.DgC)
+        FuerzasGlobales = np.concatenate((self.FgC, FuerzasDesconocidas), axis=0)
+        DesplazamientosGlobales = np.concatenate((DesplazamientosDesconocidos, self.DgC), axis=0)
+        return DesplazamientosDesconocidos, FuerzasDesconocidas, FuerzasGlobales, DesplazamientosGlobales
+
+    def tensionCompresion(self):
+        #creamos una lista vacia para ir almacenando los valores de tension y compresion
+        listaTC = []
+        for e in range(self.num_barra):
+            TransElem = self.armad[e].T
+            ke_local = self.armad[e].rigLoc
+            desplix = self.DesplazamientosGlobales[self.armad[e].vectorC[0] -1]
+            despliy = self.DesplazamientosGlobales[self.armad[e].vectorC[1] -1]
+            desplfx = self.DesplazamientosGlobales[self.armad[e].vectorC[2] -1]
+            desplfy = self.DesplazamientosGlobales[self.armad[e].vectorC[3] -1]
+            desplazamientos = np.array([desplix, despliy, desplfx, desplfy])
+            ke_local_TransElem = np.matmul(ke_local, TransElem)
+            ke_local_TransElem_Despl = np.matmul(ke_local_TransElem, desplazamientos)
+            listaTC.append(round(float(ke_local_TransElem_Despl[1]), 2))
+        return listaTC 
+            
+
+
+
 #creamos las tablas en funcion del usuario
-# tabla_elem = [
+# tabla_barras = [
 #     ['E1', 1, 1, 'N5', 'N1'], 
 #     ['E2', 1, 1, 'N2', 'N1'],
 #     ['E3', 1, 1, 'N3', 'N2'],
@@ -245,7 +328,7 @@ tabla_nodos = [
     ['N6', 150, 75, "Libre"]
     ]
 
-tabla_elem = [
+tabla_barras = [
     ['E1', 1, 1, 'N1', 'N2'],
     ['E2', 1, 1, 'N2', 'N3'],
     ['E3', 1, 1, 'N2', 'N5'],
@@ -258,8 +341,8 @@ tabla_elem = [
 ]
 
 tabla_fuerzas = [
-    [6.250,00, 'N3', 'DX'],
-    [-10.825,32, 'N3', 'DY']]
+    [6250.00 , 'N3', 'DX'],
+    [-10825.32 , 'N3', 'DY']]
 
 tabla_desplazamientos = [
     [0, 'N1', 'DX'],
@@ -267,5 +350,5 @@ tabla_desplazamientos = [
     [0, 'N4', 'DY']]
 
 
-AE = AnalisisMatricial(tabla_elem, tabla_nodos, tabla_fuerzas, tabla_desplazamientos)
+AE = AnalisisMatricial(tabla_barras, tabla_nodos, tabla_fuerzas, tabla_desplazamientos)
 print(AE)
