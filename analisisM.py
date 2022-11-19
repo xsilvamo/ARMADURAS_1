@@ -168,7 +168,6 @@ class AnalisisMatricial():
                 #los nodos que tiene reaccion fija siempre se van a ubicar al final
                 gradosLibertad -= 2
 
-
             elif tipo == "DX":
                 reacciones += 1
                 dicNodos.setdefault(key_Nodos, [coorx, coory, constante, gradosLibertad])
@@ -250,6 +249,7 @@ class AnalisisMatricial():
             elif direccion == 'DY':
                 j = self.N[nodo][3]-1
             FuerzasConocidas[j] = self.tF[i][0]
+
         return FuerzasConocidas
 
 
@@ -259,10 +259,10 @@ class AnalisisMatricial():
             nodo = self.tD[i][1]
             direccion = self.tD[i][2]
             if direccion == 'DX':
-                j = self.N[nodo][2]-1
+                j = self.N[nodo][2]-1 - self.num_fuerzasConocidas
             elif direccion == 'DY':
-                j = self.N[nodo][3]-1
-            DesplazamientosConocidos[j-self.num_fuerzasConocidas] = self.tD[i][0]
+                j = self.N[nodo][3]-1 - self.num_fuerzasConocidas
+            DesplazamientosConocidos[j] = self.tD[i][0]
         return DesplazamientosConocidos
     
     def reaccionesDesplazamientos(self):
@@ -319,36 +319,61 @@ class AnalisisMatricial():
 #     [0, 'N4', 'DX'],
 #     [0, 'N4', 'DY']]
 
-tabla_nodos = [
-    ['N1', 0, 0, "Fijo"],
-    ['N2', 150, 0, "Libre"],
-    ['N3', 300, 0, "Libre"],
-    ['N4', 450, 0, "Fijo"],
-    ['N5', 300, 75, "Libre"],
-    ['N6', 150, 75, "Libre"]
-    ]
+# tabla_nodos = [
+#     ['N1', 0, 0, "Fijo"],
+#     ['N2', 150, 0, "Libre"],
+#     ['N3', 300, 0, "Libre"],
+#     ['N4', 450, 0, "Fijo"],
+#     ['N5', 300, 75, "Libre"],
+#     ['N6', 150, 75, "Libre"]
+#     ]
+
+# tabla_barras = [
+#     ['E1', 1, 1, 'N1', 'N2'],
+#     ['E2', 1, 1, 'N2', 'N3'],
+#     ['E3', 1, 1, 'N2', 'N5'],
+#     ['E4', 1, 1, 'N2', 'N6'],
+#     ['E5', 1, 1, 'N3', 'N4'],
+#     ['E6', 1, 1, 'N3', 'N5'],
+#     ['E7', 1, 1, 'N4', 'N5'],
+#     ['E8', 1, 1, 'N5', 'N6'],
+#     ['E9', 1, 1, 'N6', 'N1']
+# ]
+
+# tabla_fuerzas = [
+#     [6250.00 , 'N3', 'DX'],
+#     [-10825.32 , 'N3', 'DY']]
+
+# tabla_desplazamientos = [
+#     [0, 'N1', 'DX'],
+#     [0, 'N1', 'DY'],
+#     [0, 'N4', 'DY']]
+
+A = 1
+E = 1
 
 tabla_barras = [
     ['E1', 1, 1, 'N1', 'N2'],
     ['E2', 1, 1, 'N2', 'N3'],
-    ['E3', 1, 1, 'N2', 'N5'],
-    ['E4', 1, 1, 'N2', 'N6'],
-    ['E5', 1, 1, 'N3', 'N4'],
-    ['E6', 1, 1, 'N3', 'N5'],
-    ['E7', 1, 1, 'N4', 'N5'],
-    ['E8', 1, 1, 'N5', 'N6'],
-    ['E9', 1, 1, 'N6', 'N1']
+    ['E3', 1, 1, 'N3', 'N4'],
+    ['E4', 1, 1, 'N1', 'N4'],
+    ['E5', 1, 1, 'N2', 'N4']
 ]
 
+tabla_nodos = [
+    ['N1', 0, 0, "DX"],
+    ['N2', 4, 0, "Libre"],
+    ['N3', 8, 0, "Fijo"],
+    ['N4', 4, 4, "Libre"]]
+
 tabla_fuerzas = [
-    [6250.00 , 'N3', 'DX'],
-    [-10825.32 , 'N3', 'DY']]
+    [-450 , 'N4', 'DX']]
 
 tabla_desplazamientos = [
-    [0, 'N1', 'DX'],
-    [0, 'N1', 'DY'],
-    [0, 'N4', 'DY']]
-
+    [0, 'N3', 'DX'],
+    [0, 'N3', 'DY'],
+    [0, 'N1', 'DY']
+    ]
 
 AE = AnalisisMatricial(tabla_barras, tabla_nodos, tabla_fuerzas, tabla_desplazamientos)
 print(AE)
